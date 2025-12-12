@@ -1,1 +1,7 @@
 project_id = "wdiuekylefqsdouyyaar"
+
+[functions.slack-command]
+verify_jwt = false
+
+[functions.slack-interactions]
+verify_jwt = false
