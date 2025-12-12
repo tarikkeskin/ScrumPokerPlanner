@@ -223,10 +223,34 @@ serve(async (req) => {
           body: JSON.stringify(updatedMessage)
         });
 
-        // Send ephemeral confirmation to voter
+        // Send ephemeral confirmation to voter with highlighted card
         return new Response(JSON.stringify({
           response_type: 'ephemeral',
-          text: `✅ Your vote: *${voteValue}* has been recorded! You can change it anytime before votes are revealed.`
+          blocks: [
+            {
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: `✅ *Vote recorded!*`
+              }
+            },
+            {
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: `Your selection: *\`  ${voteValue}  \`*`
+              }
+            },
+            {
+              type: 'context',
+              elements: [
+                {
+                  type: 'mrkdwn',
+                  text: '💡 You can change your vote anytime before votes are revealed'
+                }
+              ]
+            }
+          ]
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
       } else if (actionId === 'reveal_votes') {
