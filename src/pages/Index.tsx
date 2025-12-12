@@ -2,35 +2,19 @@ import { Button } from "@/components/ui/button";
 import { PokerCard } from "@/components/PokerCard";
 import { FeatureCard } from "@/components/FeatureCard";
 import { SetupStep } from "@/components/SetupStep";
-import { 
-  Eye, 
-  EyeOff, 
-  BarChart3, 
-  Users, 
-  Zap, 
-  MessageSquare,
-  Copy,
-  ExternalLink,
-  Github
-} from "lucide-react";
+import { Eye, EyeOff, BarChart3, Users, Zap, MessageSquare, Copy, ExternalLink, Github } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
 const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
-
 const Index = () => {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
-
   const slackCommandUrl = "https://wdiuekylefqsdouyyaar.supabase.co/functions/v1/slack-command";
   const slackInteractionsUrl = "https://wdiuekylefqsdouyyaar.supabase.co/functions/v1/slack-interactions";
-
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard!`);
   };
-
-  return (
-    <div className="min-h-screen gradient-hero">
+  return <div className="min-h-screen gradient-hero">
       {/* Hero Section */}
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
@@ -39,12 +23,7 @@ const Index = () => {
             <span className="font-bold text-xl text-foreground">Poker Planner</span>
           </div>
           <div className="flex items-center gap-4">
-            <a 
-              href="https://github.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
               <Github className="w-5 h-5" />
             </a>
           </div>
@@ -60,9 +39,9 @@ const Index = () => {
               Free & Open Source
             </div>
             
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground leading-tight">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground leading-tight text-center">
               Planning Poker for{" "}
-              <span className="text-gradient">Slack Teams</span>
+              
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -85,25 +64,15 @@ const Index = () => {
               <h3 className="font-semibold text-foreground mb-6 text-center">Try it out! Click a card to vote</h3>
               
               <div className="flex flex-wrap gap-3 justify-center">
-                {FIBONACCI_SCALE.map((value) => (
-                  <PokerCard
-                    key={value}
-                    value={value}
-                    size="md"
-                    isSelected={selectedCard === value}
-                    onClick={() => {
-                      setSelectedCard(value);
-                      toast.success(`Selected: ${value}`);
-                    }}
-                  />
-                ))}
+                {FIBONACCI_SCALE.map(value => <PokerCard key={value} value={value} size="md" isSelected={selectedCard === value} onClick={() => {
+                setSelectedCard(value);
+                toast.success(`Selected: ${value}`);
+              }} />)}
               </div>
               
-              {selectedCard && (
-                <p className="text-sm text-muted-foreground mt-4 text-center">
+              {selectedCard && <p className="text-sm text-muted-foreground mt-4 text-center">
                   Your vote: <span className="font-semibold text-primary">{selectedCard}</span>
-                </p>
-              )}
+                </p>}
             </div>
           </div>
         </section>
@@ -120,36 +89,12 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <FeatureCard
-              icon={EyeOff}
-              title="Anonymous Voting"
-              description="Votes are hidden until revealed, preventing anchoring bias and encouraging independent estimation."
-            />
-            <FeatureCard
-              icon={BarChart3}
-              title="Smart Statistics"
-              description="Automatic calculation of average, median, and mode. Get consensus indicators and outlier detection."
-            />
-            <FeatureCard
-              icon={Users}
-              title="Team Collaboration"
-              description="Anyone in the channel can vote. See who has voted while keeping their estimates private."
-            />
-            <FeatureCard
-              icon={Zap}
-              title="Fibonacci Scale"
-              description="Default Fibonacci sequence (1, 2, 3, 5, 8, 13, 21) with ?, ☕ for unknowns and breaks."
-            />
-            <FeatureCard
-              icon={MessageSquare}
-              title="Slack Native"
-              description="Beautiful interactive messages that feel like a natural part of your Slack workflow."
-            />
-            <FeatureCard
-              icon={Eye}
-              title="Instant Reveal"
-              description="Session creator controls when to reveal. Re-vote easily if consensus isn't reached."
-            />
+            <FeatureCard icon={EyeOff} title="Anonymous Voting" description="Votes are hidden until revealed, preventing anchoring bias and encouraging independent estimation." />
+            <FeatureCard icon={BarChart3} title="Smart Statistics" description="Automatic calculation of average, median, and mode. Get consensus indicators and outlier detection." />
+            <FeatureCard icon={Users} title="Team Collaboration" description="Anyone in the channel can vote. See who has voted while keeping their estimates private." />
+            <FeatureCard icon={Zap} title="Fibonacci Scale" description="Default Fibonacci sequence (1, 2, 3, 5, 8, 13, 21) with ?, ☕ for unknowns and breaks." />
+            <FeatureCard icon={MessageSquare} title="Slack Native" description="Beautiful interactive messages that feel like a natural part of your Slack workflow." />
+            <FeatureCard icon={Eye} title="Instant Reveal" description="Session creator controls when to reveal. Re-vote easily if consensus isn't reached." />
           </div>
         </section>
 
@@ -166,18 +111,9 @@ const Index = () => {
             </div>
 
             <div className="bg-card rounded-2xl p-6 md:p-8 shadow-elevated border border-border space-y-8">
-              <SetupStep
-                number={1}
-                title="Create a Slack App"
-                description="Go to api.slack.com/apps and create a new app. Choose 'From scratch' and select your workspace."
-              />
+              <SetupStep number={1} title="Create a Slack App" description="Go to api.slack.com/apps and create a new app. Choose 'From scratch' and select your workspace." />
 
-              <SetupStep
-                number={2}
-                title="Configure Slash Commands"
-                description="In your app settings, go to 'Slash Commands' and create a new command:"
-                code="/poker"
-              />
+              <SetupStep number={2} title="Configure Slash Commands" description="In your app settings, go to 'Slash Commands' and create a new command:" code="/poker" />
 
               <div className="pl-14 space-y-3">
                 <div className="flex items-center gap-2">
@@ -185,21 +121,13 @@ const Index = () => {
                   <code className="bg-secondary px-2 py-1 rounded text-xs font-mono flex-1 truncate">
                     {slackCommandUrl}
                   </code>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => copyToClipboard(slackCommandUrl, "Command URL")}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(slackCommandUrl, "Command URL")}>
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
 
-              <SetupStep
-                number={3}
-                title="Enable Interactivity"
-                description="Go to 'Interactivity & Shortcuts', enable it, and set the Request URL:"
-              />
+              <SetupStep number={3} title="Enable Interactivity" description="Go to 'Interactivity & Shortcuts', enable it, and set the Request URL:" />
 
               <div className="pl-14 space-y-3">
                 <div className="flex items-center gap-2">
@@ -207,21 +135,13 @@ const Index = () => {
                   <code className="bg-secondary px-2 py-1 rounded text-xs font-mono flex-1 truncate">
                     {slackInteractionsUrl}
                   </code>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => copyToClipboard(slackInteractionsUrl, "Interactions URL")}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(slackInteractionsUrl, "Interactions URL")}>
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
 
-              <SetupStep
-                number={4}
-                title="Install to Workspace"
-                description="Go to 'Install App' and install it to your workspace. That's it! Try /poker in any channel."
-              />
+              <SetupStep number={4} title="Install to Workspace" description="Go to 'Install App' and install it to your workspace. That's it! Try /poker in any channel." />
             </div>
           </div>
         </section>
@@ -258,8 +178,6 @@ const Index = () => {
           </p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
