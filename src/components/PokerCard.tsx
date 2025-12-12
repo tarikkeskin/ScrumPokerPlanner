@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 interface PokerCardProps {
   value: string;
   isSelected?: boolean;
-  isRevealed?: boolean;
   onClick?: () => void;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -12,7 +11,6 @@ interface PokerCardProps {
 export const PokerCard = ({ 
   value, 
   isSelected = false, 
-  isRevealed = true,
   onClick,
   size = 'md',
   className
@@ -27,47 +25,33 @@ export const PokerCard = ({
     <div
       onClick={onClick}
       className={cn(
-        "relative cursor-pointer transition-all duration-300 transform perspective-1000",
+        "relative cursor-pointer transition-all duration-300 transform",
         "hover:scale-105 hover:-translate-y-1",
         isSelected && "scale-110 -translate-y-2",
-        onClick && "cursor-pointer",
         className
       )}
     >
       <div
         className={cn(
-          "rounded-xl flex items-center justify-center font-bold shadow-card",
+          "rounded-xl flex items-center justify-center font-bold",
           "border-2 transition-all duration-300",
           sizeClasses[size],
-          isRevealed 
-            ? "bg-card border-border text-foreground" 
-            : "gradient-primary border-primary/30 text-primary-foreground",
-          isSelected && "border-primary shadow-glow animate-pulse-glow"
+          "bg-card border-border text-foreground",
+          isSelected && "border-primary ring-2 ring-primary/30"
         )}
+        style={{
+          boxShadow: isSelected 
+            ? '0 8px 24px hsl(262 83% 58% / 0.25)' 
+            : '0 4px 12px hsl(220 20% 10% / 0.08)'
+        }}
       >
-        {isRevealed ? (
-          <span className={cn(
-            "transition-transform duration-300",
-            isSelected && "scale-110"
-          )}>
-            {value}
-          </span>
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-            <span className="text-sm">🃏</span>
-          </div>
-        )}
+        <span className={cn(
+          "transition-transform duration-300",
+          isSelected && "scale-110"
+        )}>
+          {value}
+        </span>
       </div>
-      
-      {/* Card shadow/depth effect */}
-      <div 
-        className={cn(
-          "absolute inset-0 rounded-xl -z-10 transition-all duration-300",
-          isSelected 
-            ? "bg-primary/20 blur-xl translate-y-2" 
-            : "bg-foreground/5 blur-md translate-y-1"
-        )}
-      />
     </div>
   );
 };

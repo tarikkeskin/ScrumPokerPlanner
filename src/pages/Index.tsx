@@ -20,7 +20,6 @@ const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
 
 const Index = () => {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
-  const [revealed, setRevealed] = useState(false);
 
   const slackCommandUrl = "https://wdiuekylefqsdouyyaar.supabase.co/functions/v1/slack-command";
   const slackInteractionsUrl = "https://wdiuekylefqsdouyyaar.supabase.co/functions/v1/slack-interactions";
@@ -83,25 +82,7 @@ const Index = () => {
 
             {/* Interactive Demo */}
             <div className="bg-card rounded-2xl p-6 md:p-8 shadow-elevated border border-border max-w-2xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-semibold text-foreground">Try it out!</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setRevealed(!revealed);
-                    if (!revealed) {
-                      toast.success("Votes revealed! 🎉");
-                    }
-                  }}
-                >
-                  {revealed ? (
-                    <><EyeOff className="w-4 h-4 mr-2" /> Hide</>
-                  ) : (
-                    <><Eye className="w-4 h-4 mr-2" /> Reveal</>
-                  )}
-                </Button>
-              </div>
+              <h3 className="font-semibold text-foreground mb-6 text-center">Try it out! Click a card to vote</h3>
               
               <div className="flex flex-wrap gap-3 justify-center">
                 {FIBONACCI_SCALE.map((value) => (
@@ -110,7 +91,6 @@ const Index = () => {
                     value={value}
                     size="md"
                     isSelected={selectedCard === value}
-                    isRevealed={revealed || selectedCard === value}
                     onClick={() => {
                       setSelectedCard(value);
                       toast.success(`Selected: ${value}`);
