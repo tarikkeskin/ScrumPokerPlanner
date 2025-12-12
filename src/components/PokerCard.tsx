@@ -33,11 +33,12 @@ export const PokerCard = ({
     >
       <div
         className={cn(
-          "rounded-xl flex items-center justify-center font-bold",
-          "border-2 transition-all duration-300",
+          "flex items-center justify-center font-bold transition-all duration-300",
           sizeClasses[size],
-          "bg-card border-border text-foreground",
-          isSelected && "border-primary ring-2 ring-primary/30"
+          "bg-card text-foreground",
+          isSelected 
+            ? "border-4 border-white rounded-2xl ring-2 ring-white/30" 
+            : "border-2 border-border rounded-xl"
         )}
         style={{
           boxShadow: isSelected 
