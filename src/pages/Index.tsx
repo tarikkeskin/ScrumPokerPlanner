@@ -50,11 +50,13 @@ const Index = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button size="lg" className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90 transition-opacity">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Add to Slack
+              <Button size="lg" className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90 transition-opacity" asChild>
+                <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Add to Slack
+                </a>
               </Button>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" onClick={() => document.getElementById('setup-guide')?.scrollIntoView({ behavior: 'smooth' })}>
                 View Documentation
               </Button>
             </div>
@@ -99,7 +101,7 @@ const Index = () => {
         </section>
 
         {/* Setup Guide */}
-        <section className="container mx-auto px-4 py-16 md:py-24">
+        <section id="setup-guide" className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
@@ -157,9 +159,11 @@ const Index = () => {
                 Set up your Slack app using the guide above and start running 
                 planning poker sessions with your team in minutes.
               </p>
-              <Button size="lg" className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90 transition-opacity">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Create Slack App
+              <Button size="lg" className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90 transition-opacity" asChild>
+                <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Create Slack App
+                </a>
               </Button>
             </div>
           </div>
