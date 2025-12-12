@@ -281,7 +281,7 @@ serve(async (req) => {
 
         let statsText = '';
         if (stats.average !== null) {
-          statsText = `\n📈 *Statistics:*\n• Average: ${stats.average}\n• Median: ${stats.median}\n• Mode: ${stats.mode}`;
+          statsText = `\n📈 *Statistics:*\n• Average: ${stats.average}`;
           if (stats.consensus) {
             statsText += '\n\n✅ *Great consensus!* The team is aligned.';
           } else if (stats.spread && stats.spread > 5) {
@@ -322,8 +322,19 @@ serve(async (req) => {
                     text: '🔄 New Round',
                     emoji: true
                   },
-                  value: JSON.stringify({ topic: session.topic, action: 'new_round' }),
+                  value: JSON.stringify({ session_id: sessionId, topic: session.topic, channel_id: payload.channel?.id, action: 'new_round' }),
                   action_id: 'new_round'
+                },
+                {
+                  type: 'button',
+                  text: {
+                    type: 'plain_text',
+                    text: '🗑️ Delete',
+                    emoji: true
+                  },
+                  style: 'danger',
+                  value: JSON.stringify({ session_id: sessionId, action: 'delete' }),
+                  action_id: 'delete_round'
                 }
               ]
             }
@@ -375,6 +386,173 @@ serve(async (req) => {
             ]
           })
         });
+
+        return new Response(null, { status: 200, headers: corsHeaders });
+
+      } else if (actionId === 'new_round') {
+        const topic = actionValue.topic;
+        const channelId = actionValue.channel_id || payload.channel?.id;
+        const teamId = payload.team?.id;
+
+        // Get or create workspace
+        let { data: workspace } = await supabase
+          .from('workspaces')
+          .select('*')
+          .eq('slack_team_id', teamId)
+          .single();
+
+        if (!workspace) {
+          const { data: newWorkspace } = await supabase
+            .from('workspaces')
+            .insert({ slack_team_id: teamId })
+            .select()
+            .single();
+          workspace = newWorkspace;
+        }
+
+        // Create new session
+        const { data: newSession, error: sessionError } = await supabase
+          .from('voting_sessions')
+          .insert({
+            workspace_id: workspace?.id,
+            topic: topic,
+            slack_channel_id: channelId,
+            created_by_slack_user_id: userId,
+            created_by_slack_username: userName,
+            status: 'active'
+          })
+          .select()
+          .single();
+
+        if (sessionError) {
+          console.error('Error creating new session:', sessionError);
+          throw sessionError;
+        }
+
+        const scale = workspace?.voting_scale || ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
+        
+        const voteButtons = scale.map((value: string) => ({
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: value,
+            emoji: true
+          },
+          value: JSON.stringify({ session_id: newSession.id, vote: value }),
+          action_id: `vote_${value}`
+        }));
+
+        const buttonRows = [];
+        for (let i = 0; i < voteButtons.length; i += 5) {
+          buttonRows.push({
+            type: 'actions',
+            elements: voteButtons.slice(i, i + 5)
+          });
+        }
+
+        const newRoundMessage = {
+          replace_original: true,
+          blocks: [
+            {
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: `🃏 *Planning Poker Session*\n\n📋 *Topic:* ${topic}\n👤 *Started by:* <@${userId}>`
+              }
+            },
+            {
+              type: 'divider'
+            },
+            {
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: '🗳️ *Cast your vote:*'
+              }
+            },
+            ...buttonRows,
+            {
+              type: 'divider'
+            },
+            {
+              type: 'context',
+              elements: [
+                {
+                  type: 'mrkdwn',
+                  text: `📊 *Votes:* 0 | 👥 *Voted:* None yet\n🔒 Votes are hidden until revealed`
+                }
+              ]
+            },
+            {
+              type: 'actions',
+              elements: [
+                {
+                  type: 'button',
+                  text: {
+                    type: 'plain_text',
+                    text: '👁️ Reveal Votes',
+                    emoji: true
+                  },
+                  style: 'primary',
+                  value: JSON.stringify({ session_id: newSession.id, action: 'reveal' }),
+                  action_id: 'reveal_votes'
+                },
+                {
+                  type: 'button',
+                  text: {
+                    type: 'plain_text',
+                    text: '❌ Cancel',
+                    emoji: true
+                  },
+                  style: 'danger',
+                  value: JSON.stringify({ session_id: newSession.id, action: 'cancel' }),
+                  action_id: 'cancel_session'
+                }
+              ]
+            }
+          ]
+        };
+
+        await fetch(responseUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newRoundMessage)
+        });
+
+        console.log('Created new round session:', newSession.id);
+        return new Response(null, { status: 200, headers: corsHeaders });
+
+      } else if (actionId === 'delete_round') {
+        const sessionId = actionValue.session_id;
+
+        // Get session to verify creator
+        const { data: session } = await supabase
+          .from('voting_sessions')
+          .select('*')
+          .eq('id', sessionId)
+          .single();
+
+        if (session && session.created_by_slack_user_id !== userId) {
+          return new Response(JSON.stringify({
+            response_type: 'ephemeral',
+            text: '❌ Only the session creator can delete this round.'
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        // Delete the message
+        await fetch(responseUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            delete_original: true
+          })
+        });
+
+        // Mark session as deleted in database
+        await supabase
+          .from('voting_sessions')
+          .update({ status: 'deleted' })
+          .eq('id', sessionId);
 
         return new Response(null, { status: 200, headers: corsHeaders });
       }
