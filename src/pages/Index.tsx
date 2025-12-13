@@ -8,8 +8,8 @@ import { toast } from "sonner";
 const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
 const Index = () => {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
-  const slackCommandUrl = "https://wdiuekylefqsdouyyaar.supabase.co/functions/v1/slack-command";
-  const slackInteractionsUrl = "https://wdiuekylefqsdouyyaar.supabase.co/functions/v1/slack-interactions";
+  const slackCommandUrl = "https://ydnsmxixdqdqzyedvtnt.supabase.co/functions/v1/slack-command";
+  const slackInteractionsUrl = "https://ydnsmxixdqdqzyedvtnt.supabase.co/functions/v1/slack-interactions";
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard!`);
