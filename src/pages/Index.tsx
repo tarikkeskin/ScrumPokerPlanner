@@ -24,7 +24,7 @@ const Index = () => {
             <span className="font-bold text-xl text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://github.com/tarikkeskin/ScrumPokerPlanner" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
               <Github className="w-5 h-5" />
             </a>
           </div>
