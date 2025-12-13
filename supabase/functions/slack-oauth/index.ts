@@ -1,0 +1,179 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const url = new URL(req.url);
+  const path = url.pathname.split('/').pop();
+
+  console.log('OAuth request:', { path, search: url.search });
+
+  const SLACK_CLIENT_ID = Deno.env.get('SLACK_CLIENT_ID');
+  const SLACK_CLIENT_SECRET = Deno.env.get('SLACK_CLIENT_SECRET');
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!SLACK_CLIENT_ID || !SLACK_CLIENT_SECRET) {
+    console.error('Missing Slack OAuth credentials');
+    return new Response('Configuration error', { status: 500 });
+  }
+
+  try {
+    // Handle OAuth callback from Slack
+    const code = url.searchParams.get('code');
+    const error = url.searchParams.get('error');
+
+    // If there's an error from Slack
+    if (error) {
+      console.error('Slack OAuth error:', error);
+      return new Response(
+        `<html><body><h1>Installation Cancelled</h1><p>You cancelled the installation or an error occurred.</p><p><a href="/">Return to home</a></p></body></html>`,
+        { headers: { 'Content-Type': 'text/html' }, status: 400 }
+      );
+    }
+
+    // If no code, redirect to Slack OAuth authorization
+    if (!code) {
+      const scopes = [
+        'commands',
+        'chat:write',
+        'chat:write.public',
+        'users:read'
+      ].join(',');
+
+      const redirectUri = `${url.origin}/functions/v1/slack-oauth`;
+      const slackAuthUrl = `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+      console.log('Redirecting to Slack OAuth:', slackAuthUrl);
+
+      return Response.redirect(slackAuthUrl, 302);
+    }
+
+    // Exchange code for access token
+    console.log('Exchanging code for token...');
+
+    const redirectUri = `${url.origin}/functions/v1/slack-oauth`;
+    const tokenResponse = await fetch('https://slack.com/api/oauth.v2.access', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: SLACK_CLIENT_ID,
+        client_secret: SLACK_CLIENT_SECRET,
+        code: code,
+        redirect_uri: redirectUri,
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+    console.log('Token response:', { ok: tokenData.ok, team: tokenData.team?.name });
+
+    if (!tokenData.ok) {
+      console.error('Token exchange failed:', tokenData.error);
+      return new Response(
+        `<html><body><h1>Installation Failed</h1><p>Error: ${tokenData.error}</p><p><a href="/">Try again</a></p></body></html>`,
+        { headers: { 'Content-Type': 'text/html' }, status: 400 }
+      );
+    }
+
+    // Store installation in database
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    const installationData = {
+      team_id: tokenData.team.id,
+      team_name: tokenData.team.name,
+      access_token: tokenData.access_token,
+      bot_user_id: tokenData.bot_user_id,
+      app_id: tokenData.app_id,
+      installed_by_user_id: tokenData.authed_user?.id,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: dbError } = await supabase
+      .from('slack_installations')
+      .upsert(installationData, { onConflict: 'team_id' });
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      // Still show success to user - the app is installed in Slack
+    } else {
+      console.log('Installation saved for team:', tokenData.team.name);
+    }
+
+    // Success page
+    return new Response(
+      `<!DOCTYPE html>
+<html>
+<head>
+  <title>Poker Planner - Installed!</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .card {
+      background: white;
+      padding: 3rem;
+      border-radius: 1rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      text-align: center;
+      max-width: 400px;
+    }
+    h1 { color: #1a1a2e; margin-bottom: 0.5rem; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    p { color: #666; line-height: 1.6; }
+    .team { font-weight: bold; color: #667eea; }
+    .code { 
+      background: #f5f5f5; 
+      padding: 0.25rem 0.5rem; 
+      border-radius: 0.25rem; 
+      font-family: monospace;
+    }
+    a {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 0.5rem;
+      font-weight: 500;
+    }
+    a:hover { background: #5a67d8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">🃏</div>
+    <h1>Successfully Installed!</h1>
+    <p>Poker Planner has been added to <span class="team">${tokenData.team.name}</span>.</p>
+    <p>Go to any channel and type <span class="code">/poker [topic]</span> to start a planning session!</p>
+    <a href="slack://open">Open Slack</a>
+  </div>
+</body>
+</html>`,
+      { headers: { 'Content-Type': 'text/html' } }
+    );
+
+  } catch (error) {
+    console.error('OAuth error:', error);
+    return new Response(
+      `<html><body><h1>Error</h1><p>${error instanceof Error ? error.message : 'Unknown error'}</p></body></html>`,
+      { headers: { 'Content-Type': 'text/html' }, status: 500 }
+    );
+  }
+});
