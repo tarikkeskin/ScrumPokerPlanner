@@ -16,7 +16,14 @@ interface SessionState {
 }
 
 function encodeState(state: SessionState): string {
-  return btoa(JSON.stringify(state));
+  // Use TextEncoder for proper UTF-8 handling
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(JSON.stringify(state));
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
 }
 
 serve(async (req) => {
