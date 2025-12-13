@@ -22,7 +22,7 @@ const Index = () => {
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🃏</span>
-            <span className="font-bold text-xl text-foreground">Poker Planner</span>
+            <span className="font-bold text-xl text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-4">
             <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -181,7 +181,7 @@ const Index = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xl">🃏</span>
-            <span className="font-semibold text-foreground">Poker Planner</span>
+            <span className="font-semibold text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
