@@ -80,7 +80,7 @@ serve(async (req) => {
     if (!tokenData.ok) {
       console.error('Token exchange failed:', tokenData.error);
       return new Response(
-        `<html><body><h1>Installation Failed</h1><p>Error: ${tokenData.error}</p><p><a href="/">Try again</a></p></body></html>`,
+        `<html><body><h1>Installation Failed</h1><p>Unable to complete installation. Please try again or contact support.</p><p><a href="/">Try again</a></p></body></html>`,
         { headers: { 'Content-Type': 'text/html' }, status: 400 }
       );
     }
@@ -172,7 +172,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('OAuth error:', error);
     return new Response(
-      `<html><body><h1>Error</h1><p>${error instanceof Error ? error.message : 'Unknown error'}</p></body></html>`,
+      `<html><body><h1>Installation Error</h1><p>Something went wrong during installation. Please try again.</p></body></html>`,
       { headers: { 'Content-Type': 'text/html' }, status: 500 }
     );
   }
