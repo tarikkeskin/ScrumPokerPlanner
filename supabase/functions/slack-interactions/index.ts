@@ -16,11 +16,25 @@ interface SessionState {
 }
 
 function encodeState(state: SessionState): string {
-  return btoa(JSON.stringify(state));
+  // Use TextEncoder for proper UTF-8 handling
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(JSON.stringify(state));
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
 }
 
 function decodeState(encoded: string): SessionState {
-  return JSON.parse(atob(encoded));
+  // Use TextDecoder for proper UTF-8 handling
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  const decoder = new TextDecoder();
+  return JSON.parse(decoder.decode(bytes));
 }
 
 function calculateStats(votes: { vote_value: string }[]) {
