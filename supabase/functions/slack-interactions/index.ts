@@ -6,17 +6,75 @@ const corsHeaders = {
 };
 
 const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
+const VALID_VOTE_VALUES = new Set(FIBONACCI_SCALE);
+const SLACK_USER_ID_PATTERN = /^[UW][A-Z0-9]{8,}$/;
+
+// Security: Verify Slack request signature
+async function verifySlackRequest(
+  req: Request,
+  body: string
+): Promise<boolean> {
+  const signingSecret = Deno.env.get('SLACK_SIGNING_SECRET');
+  if (!signingSecret) {
+    console.error('SLACK_SIGNING_SECRET not configured');
+    return false;
+  }
+
+  const timestamp = req.headers.get('x-slack-request-timestamp');
+  const signature = req.headers.get('x-slack-signature');
+
+  if (!timestamp || !signature) {
+    console.error('Missing Slack signature headers');
+    return false;
+  }
+
+  // Prevent replay attacks (5 minute window)
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(now - parseInt(timestamp)) > 300) {
+    console.error('Request timestamp too old');
+    return false;
+  }
+
+  // Compute expected signature
+  const sigBaseString = `v0:${timestamp}:${body}`;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(signingSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signatureBytes = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    encoder.encode(sigBaseString)
+  );
+  const expectedSignature = 'v0=' + Array.from(new Uint8Array(signatureBytes))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  return signature === expectedSignature;
+}
+
+// Input validation
+function validateSlackUserId(userId: string): boolean {
+  return SLACK_USER_ID_PATTERN.test(userId);
+}
+
+function validateVoteValue(value: string, scale: string[]): boolean {
+  return scale.includes(value);
+}
 
 // State structure embedded in button values
 interface SessionState {
   t: string;  // topic
   c: string;  // creator user_id
-  v: Record<string, { u: string; val: string }>;  // votes: { "U123": { u: "username", val: "5" } }
+  v: Record<string, { u: string; val: string }>;  // votes
   s: string[];  // scale
 }
 
 function encodeState(state: SessionState): string {
-  // Use TextEncoder for proper UTF-8 handling
   const encoder = new TextEncoder();
   const bytes = encoder.encode(JSON.stringify(state));
   let binary = '';
@@ -27,7 +85,6 @@ function encodeState(state: SessionState): string {
 }
 
 function decodeState(encoded: string): SessionState {
-  // Use TextDecoder for proper UTF-8 handling
   const binary = atob(encoded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -47,16 +104,13 @@ function calculateStats(votes: { vote_value: string }[]) {
     return { average: null, median: null, mode: null, consensus: false, spread: 0 };
   }
 
-  // Average
   const average = numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length;
 
-  // Median
   const mid = Math.floor(numericVotes.length / 2);
   const median = numericVotes.length % 2 !== 0
     ? numericVotes[mid]
     : (numericVotes[mid - 1] + numericVotes[mid]) / 2;
 
-  // Mode
   const frequency: Record<number, number> = {};
   let maxFreq = 0;
   let mode = numericVotes[0];
@@ -69,7 +123,6 @@ function calculateStats(votes: { vote_value: string }[]) {
     }
   });
 
-  // Consensus (all votes within 1 step of each other)
   const uniqueVotes = [...new Set(numericVotes)];
   const consensus = uniqueVotes.length === 1 || 
     (uniqueVotes.length === 2 && Math.abs(uniqueVotes[0] - uniqueVotes[1]) <= 2);
@@ -180,43 +233,89 @@ serve(async (req) => {
   }
 
   try {
-    const formData = await req.formData();
-    const payloadStr = formData.get('payload') as string;
+    // Clone request to read body for signature verification
+    const bodyText = await req.text();
+    
+    // Security: Verify Slack signature
+    const isValid = await verifySlackRequest(req, bodyText);
+    if (!isValid) {
+      console.error('Invalid Slack signature');
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // Parse form data from body text
+    const params = new URLSearchParams(bodyText);
+    const payloadStr = params.get('payload');
+    if (!payloadStr) {
+      console.error('Missing payload');
+      return new Response('Bad Request', { status: 400 });
+    }
+
     const payload = JSON.parse(payloadStr);
 
     console.log('Received interaction:', payload.type, payload.actions?.[0]?.action_id);
 
-    const userId = payload.user.id;
-    const userName = payload.user.username || payload.user.name;
+    const userId = payload.user?.id;
+    const userName = payload.user?.username || payload.user?.name;
     const responseUrl = payload.response_url;
 
+    // Validate user ID
+    if (!userId || !validateSlackUserId(userId)) {
+      console.error('Invalid user_id in payload');
+      return new Response(JSON.stringify({
+        response_type: 'ephemeral',
+        text: '❌ Invalid request. Please try again.'
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     if (payload.type === 'block_actions') {
-      const action = payload.actions[0];
+      const action = payload.actions?.[0];
+      if (!action) {
+        return new Response('Bad Request', { status: 400 });
+      }
+
       const actionId = action.action_id;
-      const actionValue = JSON.parse(action.value);
+      
+      let actionValue;
+      try {
+        actionValue = JSON.parse(action.value);
+      } catch {
+        console.error('Invalid action value');
+        return new Response(JSON.stringify({
+          response_type: 'ephemeral',
+          text: '❌ Invalid request. Please try again.'
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
 
       // Decode current state from button value
       let state: SessionState;
       try {
         state = decodeState(actionValue.state);
       } catch (e) {
-        console.error('Failed to decode state:', e);
+        console.error('Failed to decode state');
         return new Response(JSON.stringify({
           response_type: 'ephemeral',
-          text: '❌ Session state is corrupted. Please start a new session.'
+          text: '❌ Session expired. Please start a new session.'
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       if (actionId.startsWith('vote_')) {
-        // Handle vote
         const voteValue = actionValue.vote;
 
+        // Validate vote value
+        if (!validateVoteValue(voteValue, state.s || FIBONACCI_SCALE)) {
+          console.error('Invalid vote value:', voteValue);
+          return new Response(JSON.stringify({
+            response_type: 'ephemeral',
+            text: '❌ Invalid vote. Please try again.'
+          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
         // Add/update vote in state
-        state.v[userId] = { u: userName, val: voteValue };
+        state.v[userId] = { u: userName || 'Unknown', val: voteValue };
 
-        console.log('Vote recorded:', { userId, voteValue, totalVotes: Object.keys(state.v).length });
+        console.log('Vote recorded:', { totalVotes: Object.keys(state.v).length });
 
-        // Update the original message with new state
         const updatedMessage = buildVotingMessage(state);
 
         await fetch(responseUrl, {
@@ -225,7 +324,6 @@ serve(async (req) => {
           body: JSON.stringify(updatedMessage)
         });
 
-        // Send ephemeral confirmation to voter
         return new Response(JSON.stringify({
           response_type: 'ephemeral',
           blocks: [
@@ -256,7 +354,6 @@ serve(async (req) => {
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
       } else if (actionId === 'reveal_votes') {
-        // Only creator can reveal
         if (state.c !== userId) {
           return new Response(JSON.stringify({
             response_type: 'ephemeral',
@@ -273,11 +370,9 @@ serve(async (req) => {
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
 
-        // Calculate statistics
         const voteObjects = votes.map(([_, v]) => ({ vote_value: v.val }));
         const stats = calculateStats(voteObjects);
 
-        // Build results
         const votesList = votes.map(([uid, v]) => `• <@${uid}>: *${v.val}*`).join('\n');
 
         let statsText = '';
@@ -290,7 +385,6 @@ serve(async (req) => {
           }
         }
 
-        // Create fresh state for new round button
         const newRoundState: SessionState = {
           t: state.t,
           c: userId,
@@ -356,11 +450,10 @@ serve(async (req) => {
           body: JSON.stringify(resultsMessage)
         });
 
-        console.log('Votes revealed:', { totalVotes: votes.length, topic: state.t });
+        console.log('Votes revealed:', { totalVotes: votes.length });
         return new Response(null, { status: 200, headers: corsHeaders });
 
       } else if (actionId === 'cancel_session') {
-        // Only creator can cancel
         if (state.c !== userId) {
           return new Response(JSON.stringify({
             response_type: 'ephemeral',
@@ -385,11 +478,10 @@ serve(async (req) => {
           })
         });
 
-        console.log('Session cancelled:', { topic: state.t, cancelledBy: userId });
+        console.log('Session cancelled');
         return new Response(null, { status: 200, headers: corsHeaders });
 
       } else if (actionId === 'new_round') {
-        // Start new round with same topic
         const newRoundMessage = buildVotingMessage(state);
         newRoundMessage.replace_original = true;
 
@@ -399,11 +491,10 @@ serve(async (req) => {
           body: JSON.stringify(newRoundMessage)
         });
 
-        console.log('New round started:', { topic: state.t, startedBy: userId });
+        console.log('New round started');
         return new Response(null, { status: 200, headers: corsHeaders });
 
       } else if (actionId === 'delete_round') {
-        // Only creator can delete
         if (state.c !== userId) {
           return new Response(JSON.stringify({
             response_type: 'ephemeral',
@@ -411,7 +502,6 @@ serve(async (req) => {
           }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
 
-        // Delete the message
         await fetch(responseUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -420,7 +510,7 @@ serve(async (req) => {
           })
         });
 
-        console.log('Session deleted:', { topic: state.t });
+        console.log('Session deleted');
         return new Response(null, { status: 200, headers: corsHeaders });
       }
     }
@@ -429,10 +519,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in slack-interactions:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // Sanitized error message - no internal details exposed
     return new Response(JSON.stringify({
       response_type: 'ephemeral',
-      text: `❌ Something went wrong: ${errorMessage}`
+      text: '❌ Something went wrong. Please try again.'
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
