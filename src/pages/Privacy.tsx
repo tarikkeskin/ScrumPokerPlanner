@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import appIcon from "@/assets/app-icon.jpg";
 
 const Privacy = () => {
   return (
@@ -8,7 +9,7 @@ const Privacy = () => {
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl">🃏</span>
+            <img src={appIcon} alt="Scrum Poker Planner" className="w-8 h-8 rounded-lg" />
             <span className="font-bold text-xl text-foreground">Scrum Poker Planner</span>
           </Link>
         </nav>
@@ -128,7 +129,7 @@ const Privacy = () => {
       <footer className="container mx-auto px-4 py-8 border-t border-border mt-12">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🃏</span>
+            <img src={appIcon} alt="Scrum Poker Planner" className="w-6 h-6 rounded-md" />
             <span className="font-semibold text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">

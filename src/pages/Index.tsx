@@ -2,26 +2,25 @@ import { Button } from "@/components/ui/button";
 import { PokerCard } from "@/components/PokerCard";
 import { FeatureCard } from "@/components/FeatureCard";
 import { SetupStep } from "@/components/SetupStep";
-import { Eye, EyeOff, BarChart3, Users, Zap, MessageSquare, Copy, ExternalLink, Github } from "lucide-react";
+import { Eye, EyeOff, BarChart3, Users, Zap, MessageSquare, Github } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import appIcon from "@/assets/app-icon.jpg";
+
 const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
+
 const Index = () => {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const supabaseUrl = "https://ydnsmxixdqdqzyedvtnt.supabase.co/functions/v1";
-  const slackCommandUrl = `${supabaseUrl}/slack-command`;
-  const slackInteractionsUrl = `${supabaseUrl}/slack-interactions`;
   const slackOAuthUrl = `${supabaseUrl}/slack-oauth`;
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard!`);
-  };
-  return <div className="min-h-screen gradient-hero">
+
+  return (
+    <div className="min-h-screen gradient-hero">
       {/* Hero Section */}
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🃏</span>
+            <img src={appIcon} alt="Scrum Poker Planner" className="w-8 h-8 rounded-lg" />
             <span className="font-bold text-xl text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-4">
@@ -42,8 +41,7 @@ const Index = () => {
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold mb-6 text-foreground leading-tight text-center">
-              Planning Poker for{" "}
-              
+              Planning Poker for Slack
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -60,8 +58,8 @@ const Index = () => {
                   Add to Slack
                 </a>
               </Button>
-              <Button size="lg" variant="outline" onClick={() => document.getElementById('setup-guide')?.scrollIntoView({ behavior: 'smooth' })}>
-                View Documentation
+              <Button size="lg" variant="outline" onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}>
+                Learn More
               </Button>
             </div>
 
@@ -70,15 +68,25 @@ const Index = () => {
               <h3 className="font-semibold text-foreground mb-6 text-center">Try it out! Click a card to vote</h3>
               
               <div className="flex flex-wrap gap-3 justify-center">
-                {FIBONACCI_SCALE.map(value => <PokerCard key={value} value={value} size="md" isSelected={selectedCard === value} onClick={() => {
-                setSelectedCard(value);
-                toast.success(`Selected: ${value}`);
-              }} />)}
+                {FIBONACCI_SCALE.map(value => (
+                  <PokerCard
+                    key={value}
+                    value={value}
+                    size="md"
+                    isSelected={selectedCard === value}
+                    onClick={() => {
+                      setSelectedCard(value);
+                      toast.success(`Selected: ${value}`);
+                    }}
+                  />
+                ))}
               </div>
               
-              {selectedCard && <p className="text-sm text-muted-foreground mt-4 text-center">
+              {selectedCard && (
+                <p className="text-sm text-muted-foreground mt-4 text-center">
                   Your vote: <span className="font-semibold text-primary">{selectedCard}</span>
-                </p>}
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -104,50 +112,24 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Setup Guide */}
-        <section id="setup-guide" className="container mx-auto px-4 py-16 md:py-24">
+        {/* How It Works */}
+        <section id="how-it-works" className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-                Setup Guide
+                How It Works
               </h2>
               <p className="text-muted-foreground">
-                Get your Planning Poker bot running in minutes.
+                Get started in seconds with a simple one-click installation.
               </p>
             </div>
 
             <div className="bg-card rounded-2xl p-6 md:p-8 shadow-elevated border border-border space-y-8">
-              <SetupStep number={1} title="Create a Slack App" description="Go to api.slack.com/apps and create a new app. Choose 'From scratch' and select your workspace." />
+              <SetupStep number={1} title="Add to Slack" description="Click the 'Add to Slack' button above to install the app to your workspace. No configuration needed!" />
 
-              <SetupStep number={2} title="Configure Slash Commands" description="In your app settings, go to 'Slash Commands' and create a new command:" code="/poker" />
+              <SetupStep number={2} title="Start a Session" description="In any Slack channel, type /poker followed by the topic you want to estimate." code="/poker Estimate the login feature" />
 
-              <div className="pl-14 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Request URL:</span>
-                  <code className="bg-secondary px-2 py-1 rounded text-xs font-mono flex-1 truncate">
-                    {slackCommandUrl}
-                  </code>
-                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(slackCommandUrl, "Command URL")}>
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <SetupStep number={3} title="Enable Interactivity" description="Go to 'Interactivity & Shortcuts', enable it, and set the Request URL:" />
-
-              <div className="pl-14 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Request URL:</span>
-                  <code className="bg-secondary px-2 py-1 rounded text-xs font-mono flex-1 truncate">
-                    {slackInteractionsUrl}
-                  </code>
-                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(slackInteractionsUrl, "Interactions URL")}>
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <SetupStep number={4} title="Install to Workspace" description="Go to 'Install App' and install it to your workspace. That's it! Try /poker in any channel." />
+              <SetupStep number={3} title="Vote & Reveal" description="Team members click cards to vote. When ready, the session creator reveals all votes and sees statistics." />
             </div>
           </div>
         </section>
@@ -160,8 +142,7 @@ const Index = () => {
                 Ready to estimate?
               </h2>
               <p className="text-muted-foreground mb-8">
-                Set up your Slack app using the guide above and start running 
-                planning poker sessions with your team in minutes.
+                Install Scrum Poker Planner and start running planning poker sessions with your team in seconds.
               </p>
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90 transition-opacity" asChild>
                 <a href={slackOAuthUrl}>
@@ -180,7 +161,7 @@ const Index = () => {
       <footer className="container mx-auto px-4 py-8 border-t border-border">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🃏</span>
+            <img src={appIcon} alt="Scrum Poker Planner" className="w-6 h-6 rounded-md" />
             <span className="font-semibold text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -189,6 +170,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
