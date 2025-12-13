@@ -183,9 +183,10 @@ const Index = () => {
             <span className="text-xl">🃏</span>
             <span className="font-semibold text-foreground">Poker Planner</span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Open source Planning Poker for Slack teams
-          </p>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
+            <a href="/support" className="hover:text-foreground transition-colors">Support</a>
+          </div>
         </div>
       </footer>
     </div>;
