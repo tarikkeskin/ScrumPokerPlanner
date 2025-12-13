@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      slack_installations: {
+        Row: {
+          access_token: string
+          app_id: string | null
+          bot_user_id: string | null
+          id: string
+          installed_at: string
+          installed_by_user_id: string | null
+          team_id: string
+          team_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          app_id?: string | null
+          bot_user_id?: string | null
+          id?: string
+          installed_at?: string
+          installed_by_user_id?: string | null
+          team_id: string
+          team_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          app_id?: string | null
+          bot_user_id?: string | null
+          id?: string
+          installed_at?: string
+          installed_by_user_id?: string | null
+          team_id?: string
+          team_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       votes: {
         Row: {
           created_at: string
