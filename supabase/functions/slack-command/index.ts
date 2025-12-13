@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,8 +7,17 @@ const corsHeaders = {
 
 const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+// State structure embedded in button values
+interface SessionState {
+  t: string;  // topic
+  c: string;  // creator user_id
+  v: Record<string, { u: string; val: string }>;  // votes: { "U123": { u: "username", val: "5" } }
+  s: string[];  // scale
+}
+
+function encodeState(state: SessionState): string {
+  return btoa(JSON.stringify(state));
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,19 +25,12 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const formData = await req.formData();
     
-    const command = formData.get('command') as string;
     const text = formData.get('text') as string;
-    const teamId = formData.get('team_id') as string;
-    const teamDomain = formData.get('team_domain') as string;
-    const channelId = formData.get('channel_id') as string;
     const userId = formData.get('user_id') as string;
-    const userName = formData.get('user_name') as string;
-    const responseUrl = formData.get('response_url') as string;
 
-    console.log('Received slash command:', { command, text, teamId, channelId, userId });
+    console.log('Received slash command:', { text, userId });
 
     // Handle help command
     if (text?.toLowerCase() === 'help') {
@@ -58,62 +59,25 @@ serve(async (req) => {
       });
     }
 
-    // Get or create workspace
-    let { data: workspace } = await supabase
-      .from('workspaces')
-      .select('*')
-      .eq('slack_team_id', teamId)
-      .maybeSingle();
+    // Create initial state (no database needed!)
+    const initialState: SessionState = {
+      t: text.trim().substring(0, 200),  // Truncate topic to save space
+      c: userId,
+      v: {},  // Empty votes
+      s: FIBONACCI_SCALE
+    };
 
-    if (!workspace) {
-      const { data: newWorkspace, error: wsError } = await supabase
-        .from('workspaces')
-        .insert({
-          slack_team_id: teamId,
-          slack_team_name: teamDomain
-        })
-        .select()
-        .single();
-      
-      if (wsError) {
-        console.error('Error creating workspace:', wsError);
-        throw wsError;
-      }
-      workspace = newWorkspace;
-    }
+    const encodedState = encodeState(initialState);
 
-    // Create voting session
-    const { data: session, error: sessionError } = await supabase
-      .from('voting_sessions')
-      .insert({
-        workspace_id: workspace.id,
-        slack_channel_id: channelId,
-        topic: text.trim(),
-        created_by_slack_user_id: userId,
-        created_by_slack_username: userName
-      })
-      .select()
-      .single();
-
-    if (sessionError) {
-      console.error('Error creating session:', sessionError);
-      throw sessionError;
-    }
-
-    console.log('Created session:', session.id);
-
-    // Get voting scale
-    const scale = workspace.voting_scale || FIBONACCI_SCALE;
-
-    // Build voting buttons
-    const voteButtons = scale.map((value: string) => ({
+    // Build voting buttons with embedded state
+    const voteButtons = FIBONACCI_SCALE.map((value: string) => ({
       type: 'button',
       text: {
         type: 'plain_text',
         text: value,
         emoji: true
       },
-      value: JSON.stringify({ session_id: session.id, vote: value }),
+      value: JSON.stringify({ state: encodedState, vote: value }),
       action_id: `vote_${value}`
     }));
 
@@ -170,7 +134,7 @@ serve(async (req) => {
                 emoji: true
               },
               style: 'primary',
-              value: JSON.stringify({ session_id: session.id, action: 'reveal' }),
+              value: JSON.stringify({ state: encodedState, action: 'reveal' }),
               action_id: 'reveal_votes',
               confirm: {
                 title: {
@@ -199,13 +163,15 @@ serve(async (req) => {
                 emoji: true
               },
               style: 'danger',
-              value: JSON.stringify({ session_id: session.id, action: 'cancel' }),
+              value: JSON.stringify({ state: encodedState, action: 'cancel' }),
               action_id: 'cancel_session'
             }
           ]
         }
       ]
     };
+
+    console.log('Created session with embedded state');
 
     return new Response(JSON.stringify(message), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
