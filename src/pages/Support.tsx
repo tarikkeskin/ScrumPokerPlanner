@@ -10,7 +10,7 @@ const Support = () => {
         <nav className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">🃏</span>
-            <span className="font-bold text-xl text-foreground">Poker Planner</span>
+            <span className="font-bold text-xl text-foreground">Scrum Poker Planner</span>
           </Link>
         </nav>
       </header>
@@ -25,7 +25,7 @@ const Support = () => {
 
         <h1 className="text-4xl font-bold mb-4 text-foreground">Support</h1>
         <p className="text-lg text-muted-foreground mb-12">
-          Need help with Poker Planner? We are here to assist you.
+          Need help with Scrum Poker Planner? We are here to assist you.
         </p>
 
         <div className="grid md:grid-cols-2 gap-6 mb-12">
@@ -35,7 +35,7 @@ const Support = () => {
                 <Book className="w-5 h-5 text-primary" />
                 Quick Start Guide
               </CardTitle>
-              <CardDescription>Learn how to use Poker Planner</CardDescription>
+              <CardDescription>Learn how to use Scrum Poker Planner</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-muted-foreground">
               <div>
@@ -141,7 +141,7 @@ const Support = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xl">🃏</span>
-            <span className="font-semibold text-foreground">Poker Planner</span>
+            <span className="font-semibold text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>

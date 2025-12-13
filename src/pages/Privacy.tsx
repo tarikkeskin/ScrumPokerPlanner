@@ -9,7 +9,7 @@ const Privacy = () => {
         <nav className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">🃏</span>
-            <span className="font-bold text-xl text-foreground">Poker Planner</span>
+            <span className="font-bold text-xl text-foreground">Scrum Poker Planner</span>
           </Link>
         </nav>
       </header>
@@ -30,7 +30,7 @@ const Privacy = () => {
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">Introduction</h2>
             <p>
-              Poker Planner ("we", "our", or "us") is a Slack application that helps agile teams 
+              Scrum Poker Planner ("we", "our", or "us") is a Slack application that helps agile teams 
               run planning poker estimation sessions directly within Slack. This Privacy Policy 
               explains how we collect, use, and protect your information when you use our application.
             </p>
@@ -38,7 +38,7 @@ const Privacy = () => {
 
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">Information We Collect</h2>
-            <p>When you install and use Poker Planner, we collect the following information:</p>
+            <p>When you install and use Scrum Poker Planner, we collect the following information:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
                 <strong>Slack Workspace Information:</strong> Workspace ID and name to identify 
@@ -79,7 +79,7 @@ const Privacy = () => {
             <h2 className="text-2xl font-semibold text-foreground">Data Sharing</h2>
             <p>
               We do not sell, trade, or otherwise transfer your information to third parties. 
-              Your data is used solely to provide the Poker Planner service and is not shared 
+              Your data is used solely to provide the Scrum Poker Planner service and is not shared 
               with any external services, advertisers, or other entities.
             </p>
           </section>
@@ -129,7 +129,7 @@ const Privacy = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xl">🃏</span>
-            <span className="font-semibold text-foreground">Poker Planner</span>
+            <span className="font-semibold text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
