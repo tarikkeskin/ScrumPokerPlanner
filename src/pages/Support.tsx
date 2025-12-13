@@ -128,7 +128,7 @@ const Support = () => {
                 </a>
               </Button>
               <Button variant="outline" asChild>
-                <a href="https://github.com/scrumpokerplanner/scrumpokerplanner" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/tarikkeskin/ScrumPokerPlanner" target="_blank" rel="noopener noreferrer">
                   <Github className="w-4 h-4 mr-2" />
                   GitHub Issues
                 </a>
