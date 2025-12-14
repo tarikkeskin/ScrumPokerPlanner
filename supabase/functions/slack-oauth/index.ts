@@ -111,11 +111,12 @@ serve(async (req) => {
     }
 
     // Success page
-    return new Response(
-      `<!DOCTYPE html>
-<html>
+    const successHtml = `<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>Poker Planner - Installed!</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrum Poker Planner - Installed!</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -124,7 +125,7 @@ serve(async (req) => {
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     }
     .card {
       background: white;
@@ -137,7 +138,7 @@ serve(async (req) => {
     h1 { color: #1a1a2e; margin-bottom: 0.5rem; }
     .emoji { font-size: 4rem; margin-bottom: 1rem; }
     p { color: #666; line-height: 1.6; }
-    .team { font-weight: bold; color: #667eea; }
+    .team { font-weight: bold; color: #f59e0b; }
     .code { 
       background: #f5f5f5; 
       padding: 0.25rem 0.5rem; 
@@ -148,27 +149,32 @@ serve(async (req) => {
       display: inline-block;
       margin-top: 1.5rem;
       padding: 0.75rem 1.5rem;
-      background: #667eea;
+      background: #f59e0b;
       color: white;
       text-decoration: none;
       border-radius: 0.5rem;
       font-weight: 500;
     }
-    a:hover { background: #5a67d8; }
+    a:hover { background: #d97706; }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="emoji">🃏</div>
     <h1>Successfully Installed!</h1>
-    <p>Poker Planner has been added to <span class="team">${tokenData.team.name}</span>.</p>
+    <p>Scrum Poker Planner has been added to <span class="team">${tokenData.team.name}</span>.</p>
     <p>Go to any channel and type <span class="code">/poker [topic]</span> to start a planning session!</p>
     <a href="slack://open">Open Slack</a>
   </div>
 </body>
-</html>`,
-      { headers: { 'Content-Type': 'text/html' } }
-    );
+</html>`;
+
+    return new Response(successHtml, { 
+      headers: { 
+        ...corsHeaders,
+        'Content-Type': 'text/html; charset=utf-8' 
+      } 
+    });
 
   } catch (error) {
     console.error('OAuth error:', error);
