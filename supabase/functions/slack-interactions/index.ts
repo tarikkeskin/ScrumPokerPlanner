@@ -158,37 +158,24 @@ function buildVotingMessage(state: SessionState, showVoters: boolean = true) {
   const voteCount = Object.keys(state.v).length;
   const voters = Object.keys(state.v).map(uid => `<@${uid}>`).join(', ') || 'None yet';
 
-  // Build buttons with middle votes interspersed
+  // Build buttons - main votes and middle votes separately
   const numericValues = scale.filter((v: string) => !isNaN(parseFloat(v)));
   const specialValues = scale.filter((v: string) => isNaN(parseFloat(v)));
   
-  const allButtons: any[] = [];
-  for (let i = 0; i < numericValues.length; i++) {
-    // Add main vote button
-    allButtons.push({
+  // Create main vote buttons
+  const mainButtons: any[] = [];
+  numericValues.forEach((value: string) => {
+    mainButtons.push({
       type: 'button',
-      text: { type: 'plain_text', text: numericValues[i], emoji: true },
-      value: JSON.stringify({ state: encodedState, vote: numericValues[i] }),
-      action_id: `vote_${numericValues[i]}`
+      text: { type: 'plain_text', text: value, emoji: true },
+      value: JSON.stringify({ state: encodedState, vote: value }),
+      action_id: `vote_${value}`
     });
-    
-    // Add middle vote button if there's a next numeric value
-    if (i < numericValues.length - 1) {
-      const middleValue = `${numericValues[i]}-${numericValues[i + 1]}`;
-      if (MIDDLE_VOTES.includes(middleValue)) {
-        allButtons.push({
-          type: 'button',
-          text: { type: 'plain_text', text: '🤔', emoji: true },
-          value: JSON.stringify({ state: encodedState, vote: middleValue }),
-          action_id: `vote_${middleValue}`
-        });
-      }
-    }
-  }
+  });
   
   // Add special values (?, ☕)
   specialValues.forEach((value: string) => {
-    allButtons.push({
+    mainButtons.push({
       type: 'button',
       text: { type: 'plain_text', text: value, emoji: true },
       value: JSON.stringify({ state: encodedState, vote: value }),
@@ -196,12 +183,41 @@ function buildVotingMessage(state: SessionState, showVoters: boolean = true) {
     });
   });
 
+  // Create middle vote buttons for separate row
+  const middleButtons: any[] = [];
+  for (let i = 0; i < numericValues.length - 1; i++) {
+    const middleValue = `${numericValues[i]}-${numericValues[i + 1]}`;
+    if (MIDDLE_VOTES.includes(middleValue)) {
+      middleButtons.push({
+        type: 'button',
+        text: { type: 'plain_text', text: middleValue, emoji: true },
+        value: JSON.stringify({ state: encodedState, vote: middleValue }),
+        action_id: `vote_${middleValue}`
+      });
+    }
+  }
+
+  // Split main buttons into rows (max 5 per row)
   const buttonRows = [];
-  for (let i = 0; i < allButtons.length; i += 5) {
+  for (let i = 0; i < mainButtons.length; i += 5) {
     buttonRows.push({
       type: 'actions',
-      elements: allButtons.slice(i, i + 5)
+      elements: mainButtons.slice(i, i + 5)
     });
+  }
+  
+  // Add middle votes row with 🤔 emoji label
+  if (middleButtons.length > 0) {
+    buttonRows.push({
+      type: 'context',
+      elements: [{ type: 'mrkdwn', text: '🤔 *Undecided?*' }]
+    });
+    for (let i = 0; i < middleButtons.length; i += 5) {
+      buttonRows.push({
+        type: 'actions',
+        elements: middleButtons.slice(i, i + 5)
+      });
+    }
   }
 
   return {
