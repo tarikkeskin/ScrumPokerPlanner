@@ -110,36 +110,14 @@ serve(async (req) => {
       console.log('Installation saved for team:', tokenData.team.name);
     }
 
-    // Success - redirect to a success page or show inline HTML using data URI
-    const teamName = encodeURIComponent(tokenData.team.name);
+    // Success - redirect to frontend success page
+    // Use your deployed frontend URL
+    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://scrumpokerplanner.lovable.app';
+    const successUrl = `${frontendUrl}/install-success?team=${encodeURIComponent(tokenData.team.name)}`;
     
-    // Return a minimal HTML page that renders properly
-    return new Response(
-      `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scrum Poker Planner - Installed!</title>
-</head>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);">
-<div style="background:white;padding:3rem;border-radius:1rem;box-shadow:0 20px 40px rgba(0,0,0,0.2);text-align:center;max-width:400px;">
-<div style="font-size:4rem;margin-bottom:1rem;">🃏</div>
-<h1 style="color:#1a1a2e;margin-bottom:0.5rem;">Successfully Installed!</h1>
-<p style="color:#666;line-height:1.6;">Scrum Poker Planner has been added to <strong style="color:#f59e0b;">${tokenData.team.name}</strong>.</p>
-<p style="color:#666;line-height:1.6;">Go to any channel and type <code style="background:#f5f5f5;padding:0.25rem 0.5rem;border-radius:0.25rem;font-family:monospace;">/poker [topic]</code> to start a planning session!</p>
-<a href="slack://open" style="display:inline-block;margin-top:1.5rem;padding:0.75rem 1.5rem;background:#f59e0b;color:white;text-decoration:none;border-radius:0.5rem;font-weight:500;">Open Slack</a>
-</div>
-</body>
-</html>`,
-      { 
-        status: 200,
-        headers: { 
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        } 
-      }
-    );
+    console.log('Redirecting to success page:', successUrl);
+    
+    return Response.redirect(successUrl, 302);
 
   } catch (error) {
     console.error('OAuth error:', error);
