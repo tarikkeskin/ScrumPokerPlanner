@@ -145,6 +145,7 @@ const Support = () => {
             <span className="font-semibold text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <Link to="/support" className="hover:text-foreground transition-colors">Support</Link>
           </div>
