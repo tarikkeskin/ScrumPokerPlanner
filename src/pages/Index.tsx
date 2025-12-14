@@ -69,51 +69,44 @@ const Index = () => {
             <div className="bg-card rounded-2xl p-6 md:p-8 shadow-elevated border border-border max-w-2xl mx-auto">
               <h3 className="font-semibold text-foreground mb-6 text-center">Try it out! Click a card to vote</h3>
               
-              <div className="flex flex-wrap gap-2 justify-center items-end">
-                {NUMERIC_VALUES.map((value, index) => (
-                  <div key={value} className="flex items-end gap-1">
-                    <PokerCard
-                      value={value}
-                      size="md"
-                      isSelected={selectedCard === value}
-                      onClick={() => {
-                        setSelectedCard(value);
-                        toast.success(`Selected: ${value}`);
-                      }}
-                    />
-                    {index < NUMERIC_VALUES.length - 1 && (
+              {/* Main vote buttons */}
+              <div className="flex flex-wrap gap-2 justify-center">
+                {FIBONACCI_SCALE.map((value) => (
+                  <PokerCard
+                    key={value}
+                    value={value}
+                    size="md"
+                    isSelected={selectedCard === value}
+                    onClick={() => {
+                      setSelectedCard(value);
+                      toast.success(`Selected: ${value}`);
+                    }}
+                  />
+                ))}
+              </div>
+              
+              {/* Undecided row */}
+              <div className="mt-4 pt-3 border-t border-border/50">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-sm text-muted-foreground">🤔 Undecided?</span>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {NUMERIC_VALUES.slice(0, -1).map((value, index) => {
+                    const middleValue = `${value}-${NUMERIC_VALUES[index + 1]}`;
+                    return (
                       <MiddleVoteButton
+                        key={middleValue}
                         lowValue={value}
                         highValue={NUMERIC_VALUES[index + 1]}
-                        isSelected={selectedCard === `${value}-${NUMERIC_VALUES[index + 1]}`}
+                        isSelected={selectedCard === middleValue}
                         onClick={() => {
-                          const middleValue = `${value}-${NUMERIC_VALUES[index + 1]}`;
                           setSelectedCard(middleValue);
                           toast.success(`Undecided: ${value} or ${NUMERIC_VALUES[index + 1]}?`);
                         }}
                       />
-                    )}
-                  </div>
-                ))}
-                {/* Special values */}
-                <PokerCard
-                  value="?"
-                  size="md"
-                  isSelected={selectedCard === "?"}
-                  onClick={() => {
-                    setSelectedCard("?");
-                    toast.success("Selected: ?");
-                  }}
-                />
-                <PokerCard
-                  value="☕"
-                  size="md"
-                  isSelected={selectedCard === "☕"}
-                  onClick={() => {
-                    setSelectedCard("☕");
-                    toast.success("Selected: ☕");
-                  }}
-                />
+                    );
+                  })}
+                </div>
               </div>
               
               {selectedCard && (
