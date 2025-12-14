@@ -139,8 +139,8 @@ function calculateStats(votes: { vote_value: string }[]) {
   });
 
   const uniqueVotes = [...new Set(numericVotes)];
-  const consensus = uniqueVotes.length === 1 || 
-    (uniqueVotes.length === 2 && Math.abs(uniqueVotes[0] - uniqueVotes[1]) <= 2);
+  // Consensus only when no undecided votes AND all numeric votes are exactly equal
+  const consensus = middleVoteCount === 0 && uniqueVotes.length === 1;
 
   return { 
     average: Math.round(average * 10) / 10, 
