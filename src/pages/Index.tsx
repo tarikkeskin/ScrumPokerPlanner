@@ -67,7 +67,7 @@ const Index = () => {
 
             {/* Interactive Demo */}
             <div className="bg-card rounded-2xl p-6 md:p-8 shadow-elevated border border-border max-w-2xl mx-auto">
-              <h3 className="font-semibold text-foreground mb-6 text-center">Try it out! Click a card to vote</h3>
+              <h3 className="font-semibold text-foreground mb-6 text-center">Try it out!</h3>
               
               {/* Main vote buttons */}
               <div className="flex flex-wrap gap-2 justify-center">
@@ -141,7 +141,7 @@ const Index = () => {
             <FeatureCard icon={EyeOff} title="Anonymous Voting" description="Votes are hidden until revealed, preventing anchoring bias and encouraging independent estimation." />
             <FeatureCard icon={BarChart3} title="Smart Statistics" description="Automatic calculation of average, median, and mode. Get consensus indicators and outlier detection." />
             <FeatureCard icon={Users} title="Team Collaboration" description="Anyone in the channel can vote. See who has voted while keeping their estimates private." />
-            <FeatureCard icon={Zap} title="Fibonacci Scale" description="Default Fibonacci sequence (1, 2, 3, 5, 8, 13, 21) with ?, ☕ for unknowns and breaks." />
+            <FeatureCard icon={Zap} title="Fibonacci Scale" description="Default Fibonacci sequence (0.5, 1, 2, 3, 5, 8, 13, 21) with ?, ☕ for unknowns/breaks and undecided options between values." />
             <FeatureCard icon={MessageSquare} title="Slack Native" description="Beautiful interactive messages that feel like a natural part of your Slack workflow." />
             <FeatureCard icon={Eye} title="Instant Reveal" description="Session creator controls when to reveal. Re-vote easily if consensus isn't reached." />
           </div>
