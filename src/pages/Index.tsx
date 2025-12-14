@@ -165,6 +165,7 @@ const Index = () => {
             <span className="font-semibold text-foreground">Scrum Poker Planner</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <a href="/terms" className="hover:text-foreground transition-colors">Terms of Service</a>
             <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
             <a href="/support" className="hover:text-foreground transition-colors">Support</a>
           </div>
