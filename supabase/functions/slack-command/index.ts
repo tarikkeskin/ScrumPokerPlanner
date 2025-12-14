@@ -5,8 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-slack-signature, x-slack-request-timestamp',
 };
 
-const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
-const MIDDLE_VOTES = ["1-2", "2-3", "3-5", "5-8", "8-13", "13-21"];
+const FIBONACCI_SCALE = ["0.5", "1", "2", "3", "5", "8", "13", "21", "?", "☕"];
+const MIDDLE_VOTES = ["0.5-1", "1-2", "2-3", "3-5", "5-8", "8-13", "13-21"];
 const ALL_VOTE_VALUES = new Set([...FIBONACCI_SCALE, ...MIDDLE_VOTES]);
 const MAX_TOPIC_LENGTH = 200;
 const SLACK_USER_ID_PATTERN = /^[UW][A-Z0-9]{8,}$/;

@@ -8,8 +8,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import appIcon from "@/assets/app-icon.jpg";
 
-const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
-const NUMERIC_VALUES = ["1", "2", "3", "5", "8", "13", "21"];
+const FIBONACCI_SCALE = ["0.5", "1", "2", "3", "5", "8", "13", "21", "?", "☕"];
+const NUMERIC_VALUES = ["0.5", "1", "2", "3", "5", "8", "13", "21"];
 
 const Index = () => {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
