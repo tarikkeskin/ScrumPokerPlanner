@@ -40,7 +40,7 @@ export const MiddleVoteButton = ({
             : '0 2px 6px hsl(220 20% 10% / 0.05)'
         }}
       >
-        <span>🤔</span>
+        <span className="text-[10px]">{lowValue}-{highValue}</span>
       </div>
     </div>
   );
