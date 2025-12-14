@@ -6,7 +6,8 @@ const corsHeaders = {
 };
 
 const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
-const VALID_VOTE_VALUES = new Set(FIBONACCI_SCALE);
+const MIDDLE_VOTES = ["1-2", "2-3", "3-5", "5-8", "8-13", "13-21"];
+const ALL_VOTE_VALUES = new Set([...FIBONACCI_SCALE, ...MIDDLE_VOTES]);
 const SLACK_USER_ID_PATTERN = /^[UW][A-Z0-9]{8,}$/;
 
 // Security: Verify Slack request signature
@@ -63,7 +64,17 @@ function validateSlackUserId(userId: string): boolean {
 }
 
 function validateVoteValue(value: string, scale: string[]): boolean {
-  return scale.includes(value);
+  return scale.includes(value) || MIDDLE_VOTES.includes(value);
+}
+
+function isMiddleVote(value: string): boolean {
+  return MIDDLE_VOTES.includes(value);
+}
+
+function parseMiddleVote(value: string): { low: string; high: string } | null {
+  if (!isMiddleVote(value)) return null;
+  const [low, high] = value.split('-');
+  return { low, high };
 }
 
 // State structure embedded in button values
@@ -95,13 +106,17 @@ function decodeState(encoded: string): SessionState {
 }
 
 function calculateStats(votes: { vote_value: string }[]) {
+  // Exclude middle votes from numeric statistics
   const numericVotes = votes
+    .filter(v => !isMiddleVote(v.vote_value))
     .map(v => parseFloat(v.vote_value))
     .filter(v => !isNaN(v))
     .sort((a, b) => a - b);
 
+  const middleVoteCount = votes.filter(v => isMiddleVote(v.vote_value)).length;
+
   if (numericVotes.length === 0) {
-    return { average: null, median: null, mode: null, consensus: false, spread: 0 };
+    return { average: null, median: null, mode: null, consensus: false, spread: 0, middleVoteCount };
   }
 
   const average = numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length;
@@ -132,7 +147,8 @@ function calculateStats(votes: { vote_value: string }[]) {
     median, 
     mode, 
     consensus,
-    spread: numericVotes.length > 0 ? numericVotes[numericVotes.length - 1] - numericVotes[0] : 0
+    spread: numericVotes.length > 0 ? numericVotes[numericVotes.length - 1] - numericVotes[0] : 0,
+    middleVoteCount
   };
 }
 
@@ -142,22 +158,49 @@ function buildVotingMessage(state: SessionState, showVoters: boolean = true) {
   const voteCount = Object.keys(state.v).length;
   const voters = Object.keys(state.v).map(uid => `<@${uid}>`).join(', ') || 'None yet';
 
-  const voteButtons = scale.map((value: string) => ({
-    type: 'button',
-    text: {
-      type: 'plain_text',
-      text: value,
-      emoji: true
-    },
-    value: JSON.stringify({ state: encodedState, vote: value }),
-    action_id: `vote_${value}`
-  }));
+  // Build buttons with middle votes interspersed
+  const numericValues = scale.filter((v: string) => !isNaN(parseFloat(v)));
+  const specialValues = scale.filter((v: string) => isNaN(parseFloat(v)));
+  
+  const allButtons: any[] = [];
+  for (let i = 0; i < numericValues.length; i++) {
+    // Add main vote button
+    allButtons.push({
+      type: 'button',
+      text: { type: 'plain_text', text: numericValues[i], emoji: true },
+      value: JSON.stringify({ state: encodedState, vote: numericValues[i] }),
+      action_id: `vote_${numericValues[i]}`
+    });
+    
+    // Add middle vote button if there's a next numeric value
+    if (i < numericValues.length - 1) {
+      const middleValue = `${numericValues[i]}-${numericValues[i + 1]}`;
+      if (MIDDLE_VOTES.includes(middleValue)) {
+        allButtons.push({
+          type: 'button',
+          text: { type: 'plain_text', text: '·', emoji: true },
+          value: JSON.stringify({ state: encodedState, vote: middleValue }),
+          action_id: `vote_${middleValue}`
+        });
+      }
+    }
+  }
+  
+  // Add special values (?, ☕)
+  specialValues.forEach((value: string) => {
+    allButtons.push({
+      type: 'button',
+      text: { type: 'plain_text', text: value, emoji: true },
+      value: JSON.stringify({ state: encodedState, vote: value }),
+      action_id: `vote_${value}`
+    });
+  });
 
   const buttonRows = [];
-  for (let i = 0; i < voteButtons.length; i += 5) {
+  for (let i = 0; i < allButtons.length; i += 5) {
     buttonRows.push({
       type: 'actions',
-      elements: voteButtons.slice(i, i + 5)
+      elements: allButtons.slice(i, i + 5)
     });
   }
 
@@ -324,33 +367,61 @@ serve(async (req) => {
           body: JSON.stringify(updatedMessage)
         });
 
+        // Build confirmation message
+        const middleParts = parseMiddleVote(voteValue);
+        const confirmationBlocks = middleParts ? [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `🤔 *Undecided vote recorded!*`
+            }
+          },
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `You can't decide between *\`${middleParts.low}\`* or *\`${middleParts.high}\`*`
+            }
+          },
+          {
+            type: 'context',
+            elements: [
+              {
+                type: 'mrkdwn',
+                text: '💡 This will be shown as "undecided" when votes are revealed. You can change your vote anytime.'
+              }
+            ]
+          }
+        ] : [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `✅ *Vote recorded!*`
+            }
+          },
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Your selection: *\`  ${voteValue}  \`*`
+            }
+          },
+          {
+            type: 'context',
+            elements: [
+              {
+                type: 'mrkdwn',
+                text: '💡 You can change your vote anytime before votes are revealed'
+              }
+            ]
+          }
+        ];
+
         return new Response(JSON.stringify({
           response_type: 'ephemeral',
-          blocks: [
-            {
-              type: 'section',
-              text: {
-                type: 'mrkdwn',
-                text: `✅ *Vote recorded!*`
-              }
-            },
-            {
-              type: 'section',
-              text: {
-                type: 'mrkdwn',
-                text: `Your selection: *\`  ${voteValue}  \`*`
-              }
-            },
-            {
-              type: 'context',
-              elements: [
-                {
-                  type: 'mrkdwn',
-                  text: '💡 You can change your vote anytime before votes are revealed'
-                }
-              ]
-            }
-          ]
+          blocks: confirmationBlocks
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
       } else if (actionId === 'reveal_votes') {
@@ -373,11 +444,21 @@ serve(async (req) => {
         const voteObjects = votes.map(([_, v]) => ({ vote_value: v.val }));
         const stats = calculateStats(voteObjects);
 
-        const votesList = votes.map(([uid, v]) => `• <@${uid}>: *${v.val}*`).join('\n');
+        // Format votes list with special annotation for middle votes
+        const votesList = votes.map(([uid, v]) => {
+          const middleParts = parseMiddleVote(v.val);
+          if (middleParts) {
+            return `• <@${uid}>: *${v.val}* 🤔 _couldn't decide between ${middleParts.low} or ${middleParts.high}_`;
+          }
+          return `• <@${uid}>: *${v.val}*`;
+        }).join('\n');
 
         let statsText = '';
         if (stats.average !== null) {
           statsText = `\n📈 *Statistics:*\n• Average: ${stats.average}`;
+          if (stats.middleVoteCount > 0) {
+            statsText += `\n• ⚠️ ${stats.middleVoteCount} undecided vote(s) excluded from stats`;
+          }
           if (stats.consensus) {
             statsText += '\n\n✅ *Great consensus!* The team is aligned.';
           } else if (stats.spread && stats.spread > 5) {
