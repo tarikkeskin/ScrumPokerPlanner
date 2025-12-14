@@ -193,7 +193,7 @@ serve(async (req) => {
         if (MIDDLE_VOTES.includes(middleValue)) {
           allButtons.push({
             type: 'button',
-            text: { type: 'plain_text', text: '·', emoji: true },
+            text: { type: 'plain_text', text: '🤔', emoji: true },
             value: JSON.stringify({ state: encodedState, vote: middleValue }),
             action_id: `vote_${middleValue}`
           });
