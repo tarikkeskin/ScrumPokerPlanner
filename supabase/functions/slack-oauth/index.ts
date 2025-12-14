@@ -49,7 +49,8 @@ serve(async (req) => {
         'users:read'
       ].join(',');
 
-      const redirectUri = `${url.origin}/functions/v1/slack-oauth`;
+      // Force HTTPS for redirect URI (edge functions behind proxy may report HTTP)
+      const redirectUri = `https://${url.host}/functions/v1/slack-oauth`;
       const slackAuthUrl = `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
       console.log('Redirecting to Slack OAuth:', slackAuthUrl);
@@ -60,7 +61,7 @@ serve(async (req) => {
     // Exchange code for access token
     console.log('Exchanging code for token...');
 
-    const redirectUri = `${url.origin}/functions/v1/slack-oauth`;
+    const redirectUri = `https://${url.host}/functions/v1/slack-oauth`;
     const tokenResponse = await fetch('https://slack.com/api/oauth.v2.access', {
       method: 'POST',
       headers: {
