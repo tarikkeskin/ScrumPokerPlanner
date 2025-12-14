@@ -6,7 +6,8 @@ const corsHeaders = {
 };
 
 const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
-const VALID_VOTE_VALUES = new Set(FIBONACCI_SCALE);
+const MIDDLE_VOTES = ["1-2", "2-3", "3-5", "5-8", "8-13", "13-21"];
+const ALL_VOTE_VALUES = new Set([...FIBONACCI_SCALE, ...MIDDLE_VOTES]);
 const MAX_TOPIC_LENGTH = 200;
 const SLACK_USER_ID_PATTERN = /^[UW][A-Z0-9]{8,}$/;
 
@@ -171,24 +172,51 @@ serve(async (req) => {
 
     const encodedState = encodeState(initialState);
 
-    // Build voting buttons with embedded state
-    const voteButtons = FIBONACCI_SCALE.map((value: string) => ({
-      type: 'button',
-      text: {
-        type: 'plain_text',
-        text: value,
-        emoji: true
-      },
-      value: JSON.stringify({ state: encodedState, vote: value }),
-      action_id: `vote_${value}`
-    }));
+    // Build voting buttons with embedded state (including middle vote buttons)
+    const numericValues = FIBONACCI_SCALE.filter(v => !isNaN(parseFloat(v)));
+    const specialValues = FIBONACCI_SCALE.filter(v => isNaN(parseFloat(v)));
+    
+    // Create buttons with middle votes interspersed
+    const allButtons: any[] = [];
+    for (let i = 0; i < numericValues.length; i++) {
+      // Add main vote button
+      allButtons.push({
+        type: 'button',
+        text: { type: 'plain_text', text: numericValues[i], emoji: true },
+        value: JSON.stringify({ state: encodedState, vote: numericValues[i] }),
+        action_id: `vote_${numericValues[i]}`
+      });
+      
+      // Add middle vote button if there's a next numeric value
+      if (i < numericValues.length - 1) {
+        const middleValue = `${numericValues[i]}-${numericValues[i + 1]}`;
+        if (MIDDLE_VOTES.includes(middleValue)) {
+          allButtons.push({
+            type: 'button',
+            text: { type: 'plain_text', text: '·', emoji: true },
+            value: JSON.stringify({ state: encodedState, vote: middleValue }),
+            action_id: `vote_${middleValue}`
+          });
+        }
+      }
+    }
+    
+    // Add special values (?, ☕)
+    specialValues.forEach(value => {
+      allButtons.push({
+        type: 'button',
+        text: { type: 'plain_text', text: value, emoji: true },
+        value: JSON.stringify({ state: encodedState, vote: value }),
+        action_id: `vote_${value}`
+      });
+    });
 
     // Split buttons into rows (max 5 per row)
     const buttonRows = [];
-    for (let i = 0; i < voteButtons.length; i += 5) {
+    for (let i = 0; i < allButtons.length; i += 5) {
       buttonRows.push({
         type: 'actions',
-        elements: voteButtons.slice(i, i + 5)
+        elements: allButtons.slice(i, i + 5)
       });
     }
 

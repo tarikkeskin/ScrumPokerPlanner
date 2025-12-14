@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { PokerCard } from "@/components/PokerCard";
+import { MiddleVoteButton } from "@/components/MiddleVoteButton";
 import { FeatureCard } from "@/components/FeatureCard";
 import { SetupStep } from "@/components/SetupStep";
 import { Eye, EyeOff, BarChart3, Users, Zap, MessageSquare, Github } from "lucide-react";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 import appIcon from "@/assets/app-icon.jpg";
 
 const FIBONACCI_SCALE = ["1", "2", "3", "5", "8", "13", "21", "?", "☕"];
+const NUMERIC_VALUES = ["1", "2", "3", "5", "8", "13", "21"];
 
 const Index = () => {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
@@ -67,24 +69,64 @@ const Index = () => {
             <div className="bg-card rounded-2xl p-6 md:p-8 shadow-elevated border border-border max-w-2xl mx-auto">
               <h3 className="font-semibold text-foreground mb-6 text-center">Try it out! Click a card to vote</h3>
               
-              <div className="flex flex-wrap gap-3 justify-center">
-                {FIBONACCI_SCALE.map(value => (
-                  <PokerCard
-                    key={value}
-                    value={value}
-                    size="md"
-                    isSelected={selectedCard === value}
-                    onClick={() => {
-                      setSelectedCard(value);
-                      toast.success(`Selected: ${value}`);
-                    }}
-                  />
+              <div className="flex flex-wrap gap-2 justify-center items-end">
+                {NUMERIC_VALUES.map((value, index) => (
+                  <div key={value} className="flex items-end gap-1">
+                    <PokerCard
+                      value={value}
+                      size="md"
+                      isSelected={selectedCard === value}
+                      onClick={() => {
+                        setSelectedCard(value);
+                        toast.success(`Selected: ${value}`);
+                      }}
+                    />
+                    {index < NUMERIC_VALUES.length - 1 && (
+                      <MiddleVoteButton
+                        lowValue={value}
+                        highValue={NUMERIC_VALUES[index + 1]}
+                        isSelected={selectedCard === `${value}-${NUMERIC_VALUES[index + 1]}`}
+                        onClick={() => {
+                          const middleValue = `${value}-${NUMERIC_VALUES[index + 1]}`;
+                          setSelectedCard(middleValue);
+                          toast.success(`Undecided: ${value} or ${NUMERIC_VALUES[index + 1]}?`);
+                        }}
+                      />
+                    )}
+                  </div>
                 ))}
+                {/* Special values */}
+                <PokerCard
+                  value="?"
+                  size="md"
+                  isSelected={selectedCard === "?"}
+                  onClick={() => {
+                    setSelectedCard("?");
+                    toast.success("Selected: ?");
+                  }}
+                />
+                <PokerCard
+                  value="☕"
+                  size="md"
+                  isSelected={selectedCard === "☕"}
+                  onClick={() => {
+                    setSelectedCard("☕");
+                    toast.success("Selected: ☕");
+                  }}
+                />
               </div>
               
               {selectedCard && (
                 <p className="text-sm text-muted-foreground mt-4 text-center">
-                  Your vote: <span className="font-semibold text-primary">{selectedCard}</span>
+                  {selectedCard.includes('-') ? (
+                    <>
+                      🤔 Can't decide: <span className="font-semibold text-primary">{selectedCard.split('-')[0]}</span> or <span className="font-semibold text-primary">{selectedCard.split('-')[1]}</span>?
+                    </>
+                  ) : (
+                    <>
+                      Your vote: <span className="font-semibold text-primary">{selectedCard}</span>
+                    </>
+                  )}
                 </p>
               )}
             </div>
